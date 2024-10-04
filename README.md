@@ -1,5 +1,5 @@
 # Vehicle Control Unit
-Integration of the VCU, the car's safety sensors(APPS, BSE, ...), the Electronic differential and CAN 2.0
+The Vehicle control Unit (or VCU) is responsible for data acquisition (from sensors such as APPS, brake pedal, steering wheel, accelerometer/gyroscope) and the differential control of the motor.
 
 ## Getting Started!
 
