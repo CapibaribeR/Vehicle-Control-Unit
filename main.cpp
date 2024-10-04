@@ -138,34 +138,6 @@ bool ReadyToDrive(){
     }
 }
 
-void ISR_VELOCITY_M1(){
-    int nPulses_1{};
-    nPulses_1++;
-}
-void ISR_VELOCITY_M2(){
-    int nPulses_2{0};
-    nPulses_2++;
-}
-
-void fun(){
-    // Disable Interrupts
-    int nPulses_1{};    
-    int SAMPLE_FREQ_HZ;
-    int PULSES_PER_ROT;
-
-    // Enable Interrupts
-    float Wm1, Wm2;
-
-    // Wm1= (nPulses_1)* PULSES_PER_ROT*SAMPLE_FREQ_HZ *2*PI*;
-    
-    float time_passed_sec;
-    int pulses;
-    float pulses_per_rot;
-    float Wm, time_sec;
-    Wm=pulses*pulses_per_rot*time_sec;
-    Wm= pulses*time_passed_sec;
-}
-
 /* Safety Check: Every 20 ms*/
 void SafetyCheck(){
     /* Read all sensors*/
