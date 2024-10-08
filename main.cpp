@@ -13,8 +13,10 @@
 #include <cstdint>
 #include <cstdio>
 
-#include <AnalogSensor.h>
-#include <MotorCAN.h>           // 
+
+#include <AnalogSensor.h>           // Sensors (APPS, Brake, Steering Wheel)
+#include <Differential.h>           // Electronic Differential
+#include <MotorCAN.h>               // CAN 2.0 Communication with the motor controller
 
 
 
@@ -169,7 +171,7 @@ void OpenLoop(){
         // APPS_1.Voltage_print();
         // BSE.Voltage_print();
         // Steering_sensor.Voltage_print();
-        
+
         // Open Loop without Differential        
         Dc_Motor[0]= apps;
         Dc_Motor[1]= apps;
