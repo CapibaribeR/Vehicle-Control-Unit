@@ -25,6 +25,6 @@ const uint16_t DEL_W_MAX = 10000;
 
 
 /*======================================== Aux Functions ========================================*/
-void OpenLoopDifferential(float Steering_dg, uint16_t Apps, uint16_t Dc_Motor[]);   // Diff in Open Loop
-void Get_Differential(float Steering_dg, uint16_t Apps, uint16_t Wm_ref[]);
+void OpenLoopDifferential(float Steering_rad, uint16_t Apps, uint16_t Wm_ref[]);   // Diff in Open Loop
+void PrintDifferential(uint16_t Apps_1, float Steering_dg, uint16_t Wm_ref[]);
 #endif

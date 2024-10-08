@@ -161,7 +161,7 @@ void OpenLoop(){
     while(true){
         // Read Sensor Data
         apps = APPS_1.read_pedal();
-        brake = BSE.read_pedal();
+        brake = BSE.read_angle();
         Steering = Steering_sensor.read_angle();
         // APPS_1.Voltage_print();
         // BSE.Voltage_print();
@@ -175,7 +175,7 @@ void OpenLoop(){
         // OpenLoopDifferential(Steering_dg, apps, Dc_Motor);
 
         // DEBUG_PRINT("\nAPPS:  %f", apps);
-        DEBUG_PRINT("\nBrake: %f", float(brake)*100/UINT16_MAX);
+        // DEBUG_PRINT("\nBrake: %f", float(brake)*100/UINT16_MAX);
         DEBUG_PRINT("\nAPPS: %f", float(apps)*100/UINT16_MAX);
 
         // Check for Errors
