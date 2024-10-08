@@ -7,7 +7,7 @@
  * CAN communication with Inverters, the analog communication with all the sensors and 
  * the Electronic Differential Closed Loop control algorithm
  ***/
-
+// main() runs in its own thread in the OS
 #include "mbed.h"
 #include "rtos.h"
 #include <cstdint>
@@ -17,11 +17,6 @@
 #include <AnalogSensor.h>           // Sensors (APPS, Brake, Steering Wheel)
 #include <Differential.h>           // Electronic Differential
 #include <MotorCAN.h>               // CAN 2.0 Communication with the motor controller
-
-
-
-
-// main() runs in its own thread in the OS
 
 // DEBUG MODE
 #define DEBUG
