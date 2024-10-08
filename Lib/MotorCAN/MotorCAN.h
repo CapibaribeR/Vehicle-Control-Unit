@@ -30,12 +30,11 @@
 
 
 /*==================================== SAFETY PARAMETERS ====================================*/
-#define MAX_CURRENT_LIMIT       38          // Max Phase Current in the motor [A]
+#define MAX_CURRENT_LIMIT       50          // Max Phase Current in the motor [A]
 #define MAX_RPM_LIMIT           9000        // Max Velocity of the motor [RPM] 
 
-/*==================================== SAFETY PARAMETERS ====================================*/
-#define MAX_TEMP_CONTROLLER      80                          // Motor Controller Max temperature [°C]
-#define MAX_TEMP_MOTOR           80                          // Motor Max temperature [°C]
+#define MAX_TEMP_CONTROLLER      60         // Motor Controller Max temperature [°C]
+#define MAX_TEMP_MOTOR           60         // Motor Max temperature [°C]
 
 
 

@@ -100,9 +100,9 @@ uint8_t Apps_Flag{0};                           // Flag counter for Apps
 int main(){
 /*====================================== INITIALIZATION ======================================*/
     // IDLE until Ready to Drive [ Start Button + Brake]
-    while(!ReadyToDrive()){
-        ThisThread::sleep_for(100ms);
-    };
+    // while(!ReadyToDrive()){
+    //     ThisThread::sleep_for(100ms);
+    // };
 
     // Run RTDS (Buzzer)
     RTDS_Buzzer.write(1);
@@ -119,7 +119,7 @@ int main(){
 /*=========================================== MAIN LOOP ===========================================*/
     while (true) {
         // SafetyCheck();
-        ThisThread::sleep_for(100ms);
+        ThisThread::sleep_for(1000ms);
     }
 }
 
@@ -175,7 +175,8 @@ void OpenLoop(){
         // OpenLoopDifferential(Steering_dg, apps, Dc_Motor);
 
         // DEBUG_PRINT("\nAPPS:  %f", apps);
-        DEBUG_PRINT("\nBrake: %f", float(brake)/UINT16_MAX);
+        DEBUG_PRINT("\nBrake: %f", float(brake)*100/UINT16_MAX);
+        DEBUG_PRINT("\nAPPS: %f", float(apps)*100/UINT16_MAX);
 
         // Check for Errors
         Error_State =0;
@@ -185,14 +186,14 @@ void OpenLoop(){
             Dc_Motor[1] = 0;
         }
             
-        DEBUG_PRINT("\nMotor 1: %.2f%%  || Motor 2: %.2f%%",
-        float(Dc_Motor[0])/UINT16_MAX,float(Dc_Motor[1])/UINT16_MAX);
+        // DEBUG_PRINT("\nMotor 1: %.2f%%  || Motor 2: %.2f%%",
+        // float(Dc_Motor[0])/UINT16_MAX,float(Dc_Motor[1])/UINT16_MAX);
         
         // Send data to Inverters 
         CAN_Motor.send_to_controller_1( Dc_Motor[0] );     // Send control Signal to Controller 1
         CAN_Motor.send_to_controller_2( Dc_Motor[1] );     // Send control Signal to Controller 2
 
-        ThisThread::sleep_for(1ms);
+        ThisThread::sleep_for(100ms);
     }
 
 }
