@@ -158,16 +158,17 @@ void OpenLoop(){
     uint16_t Dc_Motor[2]{0};    // Control Signal
     uint16_t apps;              // Acc. Pedal
     uint16_t brake;             // Brake Pedal
-    float Steering_dg;          // Steering Wheel
+    float Steering;          // Steering Wheel
     float m1, m2;            
 
     while(true){
         // Read Sensor Data
         apps = APPS_1.read_pedal();
         brake = BSE.read_pedal();
-        Steering_dg = Steering_sensor.read_angle();
+        Steering = Steering_sensor.read_angle();
         // APPS_1.Voltage_print();
         // BSE.Voltage_print();
+        // Steering_sensor.Voltage_print();
         
         // Open Loop without Differential        
         Dc_Motor[0]= apps;
@@ -199,7 +200,6 @@ void OpenLoop(){
     }
 
 }
-
 
 
 /* ISR for evey time the Motor CAN receives a message*/

@@ -4,27 +4,20 @@
 
 /*========================================= ELECTRONIC DIFFERENTIAL =========================================*/
 // Calculates the Velocity [in Rad/s] of each wheel during a turn, W1 = [LEFT WHEEL] || W2 = [RIGHT WHEEL]
-void OpenLoopDifferential(float Steering_dg, uint16_t Apps, uint16_t Wm_ref[]){
+void OpenLoopDifferential(float Steering_rad, uint16_t Apps, uint16_t Wm_ref[]){
     int32_t W1_ref,W2_ref, Wv_ref;      // 32bit Aux Variables, to prevent overflow
-    uint16_t Steering{0};
-    float STREERING_TO_ACK{0};
-    float Ack_rad;
     float del_W;
 
     // Angular Velocity based on the Acc. Pedal
     Wv_ref= Apps;
     
     // For very low angles in the Steering wheel, there's no change
-    if( abs(Steering_dg)< 5){
-        Steering_dg=0;
+    if( abs(Steering_rad)< 5){
+        Steering_rad=0;
     }
 
-    // Get Ackerman Angle [in rad] using the steering Wheel rotation [in Degrees] 
-    // Ack_rad= Steering*STREERING_TO_ACK;
-    Ack_rad= (0.14 * Steering_dg)* PI/180;
-
     // Velocity Variation during turn
-    del_W= Wv_ref * K_DIF * tan(Ack_rad);
+    del_W= Wv_ref * K_DIF * tan(Steering_rad);
 
     if(del_W>DEL_W_MAX){
         del_W = DEL_W_MAX;

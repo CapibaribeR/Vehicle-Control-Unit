@@ -25,8 +25,8 @@
 #define SATURATION_VOLTAGE      0.1         // Saturation 
 
 //Steering Wheel Parameters
-#define Vol_ang_min             -80         //Minimum value for the Steering Wheel angle (Degrees)
-#define Vol_ang_max             80          //Maximum value for the Steering Wheel angle (Degrees)
+#define Vol_ang_min             -40         //Minimum value for the Steering Wheel angle (rad)
+#define Vol_ang_max             40          //Maximum value for the Steering Wheel angle (rad)
 
 // Pedal Parameters
 #define PEDAL_MIN               0           //Minimum value for the Accelerator Pedal angle (Degrees)
