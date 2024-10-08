@@ -8,8 +8,8 @@
  * as well the methods to read and map all the angle related sensors connected to the adc
  ***/
 
-#ifndef _ADC_SENSORS_H_
-#define _ADC_SENSORS_H_
+#ifndef _ANALOG_SENSOR_H_
+#define _ANALOG_SENSOR_H_
 
 #include "mbed.h"
 #include <cstdint>
@@ -65,7 +65,7 @@ bool BSE_Error_check(uint16_t Apps_val, uint16_t Brake_val, uint8_t* Error_BPPC)
 
 /*================================== Angle Sensors ==================================*/
 //class for Acelleration Pedal, break Pedal, and Steering wheel
-class angle_sensor{
+class AnalogSensor{
     //Atributes
     protected:
     float Angle{0};             // Angle's value in Degree
@@ -88,12 +88,12 @@ class angle_sensor{
 
 
     //Constructors:
-    angle_sensor(PinName adc_Pin, float _volt_min,float _volt_max, float _angle_min,float _angle_max);
+    AnalogSensor(PinName adc_Pin, float _volt_min,float _volt_max, float _angle_min,float _angle_max);
 };
 
 /*====================================== Pedal Sensors ======================================*/
 // Pedal Sensor Class (for the Accel. and break Pedals)
-class PedalSensor: public angle_sensor{
+class PedalSensor: public AnalogSensor{
     private:
     uint16_t Pedal_pos;     // Pedal Travel [0% = 0 | 100% = 16b]
     
@@ -108,7 +108,7 @@ class PedalSensor: public angle_sensor{
 
 /*================================== Steering Wheel Sensor ==================================*/
 // Steering Wheel Sensor Class
-class SteeringSensor: public angle_sensor{
+class SteeringSensor: public AnalogSensor{
 
     public:
     SteeringSensor(PinName adc_Pin, float _volt_min, float _volt_max);

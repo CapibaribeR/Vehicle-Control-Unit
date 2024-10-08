@@ -1,4 +1,4 @@
-#include "adc_sensors.h"
+#include "AnalogSensor.h"
 #include <cstdint>
 
 /*================================== ACCELERATION PEDAL PLAUSIBILITY CHECK ==================================*/
@@ -56,7 +56,7 @@ bool BSE_Error_check(uint16_t Apps_val, uint16_t Brake_val, uint8_t *flag_BPPC){
 
 /*================================== Angle Sensors ==================================*/
 // Constructors
-angle_sensor::angle_sensor(PinName adc_Pin, float _volt_min,float _volt_max, float _angle_min,float _angle_max)
+AnalogSensor::AnalogSensor(PinName adc_Pin, float _volt_min,float _volt_max, float _angle_min,float _angle_max)
     :ADC_Pin{adc_Pin,VREF_ADC},
      Volt_min{_volt_min},
      Volt_max{_volt_max},
@@ -66,7 +66,7 @@ angle_sensor::angle_sensor(PinName adc_Pin, float _volt_min,float _volt_max, flo
 
 // Methods
 /* Reads the ADC pin and returns the angle value in degrees */ 
-float angle_sensor:: read_angle(){
+float AnalogSensor:: read_angle(){
     float New_ADC = ADC_Pin.read_voltage();
     
     /* Tests if ADC voltage read is within the sensor's bounds [short or open circuit] */
@@ -94,13 +94,13 @@ float angle_sensor:: read_angle(){
 }
 
 /* */
-bool angle_sensor::get_circuit_error(){      
+bool AnalogSensor::get_circuit_error(){      
     return Circuit_ERROR;
 }
 
 
 /* Prints voltage read and 16b */
-void angle_sensor:: Voltage_print(){
+void AnalogSensor:: Voltage_print(){
     uint16_t Voltage_16bit=ADC_Pin.read_u16();
     printf("\n[VCU] ADC: Voltage_Read[16bit]: %d , Voltage[V]: %.2f V ",Voltage_16bit, ADC_Pin.read_voltage() );    
     printf("Angle: %.2f\n", Angle);
@@ -110,7 +110,7 @@ void angle_sensor:: Voltage_print(){
 /*====================================== Pedal Sensors ======================================*/
 // Constructors
 PedalSensor::PedalSensor(PinName adc_Pin, float _volt_min, float _volt_max)
-    :angle_sensor{adc_Pin, _volt_min, _volt_max, PEDAL_MIN, PEDAL_MAX}{}
+    :AnalogSensor{adc_Pin, _volt_min, _volt_max, PEDAL_MIN, PEDAL_MAX}{}
 
 // Methods
 /* Reads the Pedal travel [0% = 0 | 100% = 16b] */
@@ -143,7 +143,7 @@ void PedalSensor:: Voltage_print(){
 /*================================== Steering Wheel Sensor ==================================*/
 // Constructos
 SteeringSensor::SteeringSensor(PinName adc_Pin, float _volt_min, float _volt_max)
-    :angle_sensor{adc_Pin, _volt_min, _volt_max, Vol_ang_min, Vol_ang_max}{}
+    :AnalogSensor{adc_Pin, _volt_min, _volt_max, Vol_ang_min, Vol_ang_max}{}
 
 
 

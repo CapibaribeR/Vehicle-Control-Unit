@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <cstdio>
 
-#include <adc_sensors.h>        // Read APPS, BSE and Steering Wheel sensors
+#include <AnalogSensor.h>
 #include <MotorCAN.h>           // 
 
 
