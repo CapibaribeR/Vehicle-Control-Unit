@@ -12,12 +12,12 @@ void OpenLoopDifferential(float Steering_rad, uint16_t Apps, uint16_t Wm_ref[]){
     Wv_ref= Apps;
     
     // For very low angles in the Steering wheel, there's no change
-    if( abs(Steering_rad)< 5){
+    if( abs(Steering_rad)< 0.15){
         Steering_rad=0;
     }
 
     // Velocity Variation during turn
-    del_W= Wv_ref * K_DIF * tan(Steering_rad);
+    del_W= Wv_ref * K_DIF * tan(Steering_rad)*1.4;
 
     if(del_W>DEL_W_MAX){
         del_W = DEL_W_MAX;

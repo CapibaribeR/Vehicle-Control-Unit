@@ -25,8 +25,8 @@
 #define SATURATION_VOLTAGE      0.1         // Saturation 
 
 //Steering Wheel Parameters
-#define Vol_ang_min             -40         //Minimum value for the Steering Wheel angle (rad)
-#define Vol_ang_max             40          //Maximum value for the Steering Wheel angle (rad)
+#define Vol_ang_min             -0.52         //Minimum value for the Steering Wheel angle (rad)
+#define Vol_ang_max             0.52          //Maximum value for the Steering Wheel angle (rad)
 
 // Pedal Parameters
 #define PEDAL_MIN               0           //Minimum value for the Accelerator Pedal angle (Degrees)
@@ -81,6 +81,7 @@ class AnalogSensor{
     DigitalOut BRAKE_LIGT{BRAKE_LIGHT_PIN};
     //Methods
     public:
+    float read_brake();
     float read_angle();                             // returns scaled angle
     bool Circuit_Error_Check(float voltage_in);     // tests if ADC voltage is within bounds of sensor
     bool get_circuit_error();                       // Returns Circuit Error

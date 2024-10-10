@@ -84,6 +84,29 @@ float AnalogSensor:: read_angle(){
         Angle= map(Current_ADC, Volt_min, Volt_max, Angle_min, Angle_max);
     }
 
+    return Angle;
+}
+
+
+
+float AnalogSensor:: read_brake(){
+    float New_ADC = ADC_Pin.read_voltage();
+    
+    /* Tests if ADC voltage read is within the sensor's bounds [short or open circuit] */
+    if(New_ADC<Volt_min || New_ADC>Volt_max){
+        printf("\nCIRCUIT: ERROR DETECTED\n");
+        Circuit_ERROR=1;
+    }
+    else{
+        Circuit_ERROR=0;
+    }
+
+    // If variation is bigger than the expected noise, updates measurement 
+    if(abs(New_ADC - Current_ADC) > MAX_NOISE){
+        Current_ADC= New_ADC;
+        Angle= map(Current_ADC, Volt_min, Volt_max, Angle_min, Angle_max);
+    }
+
     if(Angle>MIN_BRAKE_VOLT){
            BRAKE_LIGT.write(1);
     }
@@ -92,6 +115,11 @@ float AnalogSensor:: read_angle(){
     }
     return Angle;
 }
+
+
+
+
+
 
 /* */
 bool AnalogSensor::get_circuit_error(){      

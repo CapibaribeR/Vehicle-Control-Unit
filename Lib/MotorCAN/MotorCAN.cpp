@@ -1,4 +1,5 @@
 #include "MotorCAN.h"
+#include <cstdio>
 
 /*================================== Constructors ==================================*/
 MotorCAN::MotorCAN(PinName _can_pin_rx, PinName _can_pin_tx, uint32_t _can_frequency)
@@ -63,12 +64,17 @@ void MotorCAN:: send_to_controller(unsigned int Motor_Id, uint16_t DC_pwm){
     //Sends CAN message, resets can if there is an error
 
     //if message was not sent as it should, sends it again 
-    if( !write(inverter_tx_msg) ) {
-        write(inverter_tx_msg);
+    if(!write(inverter_tx_msg) ) {
+        printf("\nNot sent");
+        reset_can();
+        // write(inverter_tx_msg);
+    }else{
+        printf("\nSENT: %d", DC_pwm);
+
     }
 
-
 }
+
 
 /*==========================================  RECEIVE DATA ==========================================*/
 /* Receives Data from Motor Controller 1 */
@@ -115,6 +121,7 @@ RxStruct MotorCAN:: receive_from_inverter(unsigned int Inverter_Id){
                 // Duty Cycle and Current  
                 Datafield.PWM_read=(inverter_rx_msg.data[6]/255.0f)*100;
                 Datafield.Current = inverter_rx_msg.data[7];            
+                Print_Datafield(Inverter_Id, Datafield);
             
             }
         }
@@ -124,51 +131,8 @@ RxStruct MotorCAN:: receive_from_inverter(unsigned int Inverter_Id){
         reset_can(); 
     }
     
-    Datafield_inv1 =Datafield;
+    // Datafield_inv1 =Datafield;
     return Datafield;
-}
-
-
-void receive_1(){}
-void MotorCAN::attach2(RxStruct Controller_Data_1, RxStruct Controller_Data_2){
-    attach(receive_1,CAN::RxIrq);
-}
-
-/* Receives Data from Motor Controller */
-void MotorCAN::receive(){
-    RxStruct Datafield;
-    RxStruct Controller_Data_1;
-    RxStruct Controller_Data_2;
-    //Aux variables
-    int Voltage_Hb; //voltage High byte
-    int Voltage_int;
-
-    CANMessage Controller_rx_msg;
-    Controller_rx_msg.len = 8;
-    if( read(Controller_rx_msg) ){
-        Datafield.Msg_Counter = Controller_rx_msg.data[0] & 0xF;
-        
-        Voltage_Hb = Controller_rx_msg.data[0] >> 4;
-        Voltage_int = (Voltage_Hb<<8) | Controller_rx_msg.data[1];
-        Datafield.Supply_Voltage = Voltage_int/10.0f;
-        Datafield.Temp_Controller = Controller_rx_msg.data[2]-100;      //Range[0-255],Temp Range [-100°C to 155°C]
-        Datafield.Temp_motor = Controller_rx_msg.data[3]-100;           //Range[0-255],Temp Range [-100°C to 155°C]
-        
-        Datafield.RPM= (Controller_rx_msg.data[5]<< 8) | Controller_rx_msg.data[4] ;
-        
-        Datafield.PWM_read=(Controller_rx_msg.data[6]/255.0f)*100;
-        Datafield.Current = Controller_rx_msg.data[7];            
-            }
-    else{
-        printf("Fail to stablish CAN connection. Reseting...\n");
-        reset_can(); 
-    }
-
-    if(Controller_rx_msg.id == CONTROLLER_RX_ID) {
-
-    }
-    if(Controller_rx_msg.id == CONTROLLER_RX_ID_2) {
-    }
 }
 
 
@@ -250,14 +214,14 @@ bool Temperature_Shutdown(RxStruct Controller_1, RxStruct Controller_2){
 
 /*==========================================  PRINT DATA ==========================================*/
 void MotorCAN::Print_Datafields(){
-    Print_Datafield(1, Datafield_inv1);
-    Print_Datafield(2, Datafield_inv2);
+    // Print_Datafield(1, Datafield_inv1);
+    // Print_Datafield(2, Datafield_inv2);
     
 }
 
 void MotorCAN::Print_Datafield(int Num, RxStruct Inv){
-    printf("\r\n\t[CAN] Controller %d: Volt=%.1f V, T_Ctrl= %d°C ,T_Motor = %d°C", 
-    Num, Inv.Supply_Voltage ,Inv.Temp_Controller ,Inv.Temp_motor);
+    printf("\r\n\t[CAN] Controller [%d]: msg[%d], Volt=%.1f V, T_Ctrl= %d°C ,T_Motor = %d°C", 
+    Num,Inv.Msg_Counter, Inv.Supply_Voltage ,Inv.Temp_Controller ,Inv.Temp_motor);
     
     printf(" , RPM = %d, PWM = %.2f (%.2f %%), Ic= %d A",
     Inv.RPM , Inv.PWM_read, (Inv.PWM_read/255.0f)*100,Inv.Current );
@@ -268,7 +232,7 @@ void Print_Datafield(int Num,RxStruct Motor_Data){
     Num, Motor_Data.Supply_Voltage , Motor_Data.RPM , Motor_Data.Current );
     
     // Dc Pwm
-    printf(" PWM = %.2f , (%.2f %%)", Motor_Data.PWM_read, (Motor_Data.PWM_read/65535.0)*100.0);
+    printf(" PWM = %.2f , (%.2f %%)", Motor_Data.PWM_read, (float(Motor_Data.PWM_read)/65535)*100);
 
     // Temperature
     printf(" Tc= %d°C , Tm = %d°C", Motor_Data.Temp_Controller , Motor_Data.Temp_motor);

@@ -25,13 +25,13 @@
 #define MOTOR_POLE_PAIRS    15          //Number of Pole Pairs in the Motor
 
 
-#define MAXRPM 9000
+#define MAXRPM 65535
 #define MAXPWM 65535
 
 
 /*==================================== SAFETY PARAMETERS ====================================*/
-#define MAX_CURRENT_LIMIT       50          // Max Phase Current in the motor [A]
-#define MAX_RPM_LIMIT           9000        // Max Velocity of the motor [RPM] 
+#define MAX_CURRENT_LIMIT       100          // Max Phase Current in the motor [A]
+#define MAX_RPM_LIMIT           65535        // Max Velocity of the motor [RPM] 
 
 #define MAX_TEMP_CONTROLLER      60         // Motor Controller Max temperature [°C]
 #define MAX_TEMP_MOTOR           60         // Motor Max temperature [°C]
@@ -69,8 +69,8 @@ void Print_Datafield(int Num,RxStruct Motor_Data);
 class MotorCAN:public CAN{
 
     private:
-    RxStruct Datafield_inv1; //saves the datafield received from Inverter 1
-    RxStruct Datafield_inv2; //saves the datafield received from Inverter 2
+    // RxStruct Datafield_inv1; //saves the datafield received from Inverter 1
+    // RxStruct Datafield_inv2; //saves the datafield received from Inverter 2
 
     //Methods
     public:
@@ -84,7 +84,6 @@ class MotorCAN:public CAN{
     void send_to_controller(unsigned int Motor_Id, uint16_t DC_pwm_1);
     void send_to_controller_1(uint16_t DC_pwm_1);
     void send_to_controller_2(uint16_t DC_pwm_2);
-    void attach2(RxStruct Controller_Data_1, RxStruct Controller_Data_2);
     
     // Receive data from both motor controllers
     RxStruct receive_from_inverter(unsigned int Inverter_Id);
@@ -103,9 +102,9 @@ class MotorCAN:public CAN{
 };
 
 
-    RxStruct receive_from_controller(unsigned int Inverter_Id);
-    RxStruct receive_from_controller_1();
-    RxStruct receive_from_controller_2();
+    // RxStruct receive_from_controller(unsigned int Inverter_Id);
+    // RxStruct receive_from_controller_1();
+    // RxStruct receive_from_controller_2();
     
 
 

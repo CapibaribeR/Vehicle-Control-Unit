@@ -18,8 +18,8 @@
 const uint16_t MAX_RPM  =   8000;                   // PI constant
 
 /*==================================== MECHANIC PARAMETERS ====================================*/
-const float TRACK_WIDTH =  1.4;                             // [m] "Bitola" distance between the wheels on the same axle
-const float WHEELBASE   =  1.8;                             // [m] Distance between the front and rear axles           
+const float TRACK_WIDTH =  1.25;                             // [m] "Bitola" distance between the wheels on the same axle
+const float WHEELBASE   =  1.6;                             // [m] Distance between the front and rear axles           
 const float K_DIF       =  TRACK_WIDTH / ( 2*WHEELBASE );   // [adm] constant for Differential
 const uint16_t DEL_W_MAX = 10000;
 
