@@ -72,7 +72,7 @@ void send_to_controller(unsigned int Motor_Id, uint16_t DC_pwm);
 
 /*=================================================== Objetcs =====================================================*/
 // Communication
-// CAN CAN_VCU(CAN1_RX, CAN1_TX, CAN2_FREQUENCY);                                          // VCU general CAN
+// CAN CAN_General(CAN1_RX, CAN1_TX, CAN2_FREQUENCY);                                          // VCU general CAN
 MotorCAN CAN_Motor(CAN2_RX, CAN2_TX, CAN2_FREQUENCY);                                   // Motor/Inverter CAN
 
 // Pedal and Steering wheel Sensors
@@ -113,9 +113,6 @@ int main(){
 
     // Comm. system Initializaion   
     CAN_Motor.set_CAN();
-    // Motor.mode(CAN::Normal);
-    // Motor.filter(0, 0, CANStandard);
-    // CAN_Motor.attach(Controller_CAN_ISR, CAN::RxIrq);
 
     // Powertrain & motor control
     ControlThread.start(OpenLoop);
@@ -142,7 +139,7 @@ bool ReadyToDrive(){
         return 1;
     }
     else{
-        DEBUG_PRINT("\nBrake: %f",BSE.read_angle());
+        DEBUG_PRINT("\nBrake: %f",BSE.read_brake());
         DEBUG_PRINT("\nStart Button: %d",StartButton.read());
         return 0;
     }
@@ -156,8 +153,8 @@ void SafetyCheck(){
     float Brake_val = BSE.read_angle();
 
     // Check for errors
-    // Error_State = BSE_Error_check(Apps_1, Brake_val, &BSE_Flag) || APPS_Error_check(Apps_1, Apps_2, &Apps_Flag) ;
-    // Error_State = Error_State || Temperature_Shutdown(Controller1_data,Controller2_data);
+    Error_State = BSE_Error_check(Apps_1, Brake_val, &BSE_Flag) || APPS_Error_check(Apps_1, Apps_2, &Apps_Flag) ;
+    Error_State = Error_State || Temperature_Check(Controller1_data,Controller2_data);
 }
 
 
@@ -178,14 +175,10 @@ void OpenLoop(){
         // Controller_CAN_ISR();
         // Print_Datafield(2, Controller2_data);
 
-        // Controller_CAN_ISR();
         // Read Sensor Data
         apps = APPS_1.read_pedal();
         brake = BSE.read_brake();
         Steering = Steering_sensor.read_angle();
-        // APPS_1.Voltage_print();
-        // BSE.Voltage_print();
-        // Steering_sensor.Voltage_print();
 
         // Open Loop without Differential        
         Dc_Motor[0]= apps;
@@ -216,42 +209,6 @@ void OpenLoop(){
     }
 
 }
-
-
-void send_to_controller(unsigned int Motor_Id, uint16_t DC_pwm){    
-    // uint16_t
-
-    CANMessage inverter_tx_msg;     // Creates Can message
-    inverter_tx_msg.id= CONTROLLER_TX_ID_2;   // Id
-    inverter_tx_msg.len = 8;        // Datafield size [Bytes], the max size is 8
- 
-    inverter_tx_msg.data[0] = 65535 & 0xFF;                 // LSB RPM
-    inverter_tx_msg.data[1] = 65535 >> 8;                   // MSB RPM
-    inverter_tx_msg.data[2] = 15;                     // Constant (15 pairs)
-    inverter_tx_msg.data[3] = DC_pwm & 0xFF;                        // LSB PWM (DutyCycle)
-    inverter_tx_msg.data[4] = DC_pwm >> 8;                          // MSB PWM (DutyCycle)
-    inverter_tx_msg.data[5] = 100 & 0xFF;             // Current's  LSB;
-    inverter_tx_msg.data[6] = 100 >> 8;               // Current's  MSB;
-    inverter_tx_msg.data[7] = 0b00000000;
-    //inverter_tx_msg.data[7] = (IsBreak<<7);                       // b7: 0 = Throtle || 1 = Brake 0
-    
-    //Sends CAN message, resets can if there is an error
-
-    //if message was not sent as it should, sends it again 
-    if(!CAN_Motor.write(inverter_tx_msg) ) {
-        printf("\nnot sent");
-        CAN_Motor.reset_can();
-        CAN_Motor.write(inverter_tx_msg);
-    }else{
-        printf("\nSENT: %d", DC_pwm);
-        printf("\nPWM LSB: %u, PWM MSB: %u", inverter_tx_msg.data[3], inverter_tx_msg.data[4]);
-    }
-
-}
-
-
-
-
 
 // /* ISR for evey time the Motor CAN receives a message*/
 void Controller_CAN_ISR(){
@@ -304,41 +261,19 @@ void Controller_CAN_ISR(){
 
 
 
+// void General_CAN_Send(){
+//     float Vel;
 
-
-
-// /* Sends Data to Motor Controller */
-// void send_to_controller(unsigned int Motor_Id, uint16_t DC_pwm){    
-    
-//     CANMessage inverter_tx_msg;     // Creates Can message
-//     inverter_tx_msg.id= Motor_Id;   // Id
-//     inverter_tx_msg.len = 8;        // Datafield size [Bytes], the max size is 8
- 
-//     inverter_tx_msg.data[0] = MAX_RPM_LIMIT & 0xFF;                 // LSB RPM
-//     inverter_tx_msg.data[1] = MAX_RPM_LIMIT >> 8;                   // MSB RPM
-//     inverter_tx_msg.data[2] = MOTOR_POLE_PAIRS;                     // Constant (15 pairs)
-//     inverter_tx_msg.data[3] = DC_pwm & 0xFF;                        // LSB PWM (DutyCycle)
-//     inverter_tx_msg.data[4] = DC_pwm >> 8;                          // MSB PWM (DutyCycle)
-//     inverter_tx_msg.data[5] = MAX_CURRENT_LIMIT & 0xFF;             // Current's  LSB;
-//     inverter_tx_msg.data[6] = MAX_CURRENT_LIMIT >> 8;               // Current's  MSB;
-//     inverter_tx_msg.data[7] = 0b00000000;
-//     //inverter_tx_msg.data[7] = (IsBreak<<7);                       // b7: 0 = Throtle || 1 = Brake 0
-    
-//     //Sends CAN message, resets can if there is an error
-
-//     //if message was not sent as it should, sends it again 
-//     if( !Motor.write(inverter_tx_msg) ) {
-//         Motor.write(inverter_tx_msg);
-//         Motor.reset();
-//         printf("\nnot sent");
-        
-//     }else{
-//         printf("\nSENT: %d", DC_pwm);
-//     }
+//     CANMessage Msg;
+//     Msg.id=1;
+//     Msg.len=8;
+//     Msg.data[0]=1;      // Car's Velocity
+//     Msg.data[1]=1;      //?
+//     Msg.data[2]=1;      //?
+//     Msg.data[3]=1;      //?
+//     Msg.data[4]=1;      //?
+//     Msg.data[5]=1;      //?
+//     Msg.data[6]=1;      //?
+//     Msg.data[7]=1;      //?
 
 // }
-
-
-
-
-

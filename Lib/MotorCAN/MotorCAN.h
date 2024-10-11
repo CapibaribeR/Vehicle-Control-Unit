@@ -1,18 +1,30 @@
-// /***
-//  * Capibarib E-racing
-//  * Federal University of Pernambuco (UFPE)
-//  * Group Area: Powertrain
+/***
+ * Capibarib E-racing
+ * Federal University of Pernambuco (UFPE)
+ * Group Area: Powertrain
 
-//  * This file contains methods used for the car's embedded system's communication
-//  * The datafield follows the standard for CAN 2.0 communication as described in the
-//  * Plettenberg documentation (for MST motor controllers)
-//  ***/
+ * This file contains methods used for the car's embedded system's communication
+ * The datafield follows the standard for CAN 2.0 communication as described in the
+ * Plettenberg documentation (for MST motor controllers)
+ ***/
 #ifndef _MOTOR_CAN_H_
 #define _MOTOR_CAN_H_
+
+
+// CAN DEBUG MODE:
+#define DEBUG_CAN
+
+#ifdef DEBUG_CAN
+    #define DEBUG_PRINT_CAN(...) printf(__VA_ARGS__)
+#else
+    #define DEBUG_PRINT_CAN(...)
+#endif
+
 
 #include "mbed.h"
 #include "CAN.h"
 #include <cstdint>
+
 
 // /*================================== COMMUNICATION PARAMETERS ==================================*/
 #define CONTROLLER_TX_ID      0x100
@@ -62,7 +74,7 @@ struct TxStruct{
 };
 
 // Aux 
-bool Temperature_Shutdown(RxStruct Controller_1, RxStruct Controller_2);
+bool Temperature_Check(RxStruct Controller_1, RxStruct Controller_2);
 void Print_Datafield(int Num,RxStruct Motor_Data);
 
 /*================================== CLASS ==================================*/

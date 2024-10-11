@@ -155,6 +155,10 @@ uint16_t PedalSensor:: read_pedal(){
         Pedal_pos= map_u16(Current_ADC, Volt_min, Volt_max, PEDAL_MIN, UINT16_MAX);
     }
 
+    if(Current_ADC< 0.8){
+        Pedal_pos =0;
+    }
+
     return Pedal_pos;
 }
 

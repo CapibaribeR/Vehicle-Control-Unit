@@ -12,6 +12,7 @@
 
 #include "mbed.h"
 #include <cstdint>
+#include <stdint.h>
 
 /*==================================== CONTROL PARAMETERS ====================================*/
 #define PI  3.14159265358979323846                  // PI constant 

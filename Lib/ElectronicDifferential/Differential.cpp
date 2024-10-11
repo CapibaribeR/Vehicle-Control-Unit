@@ -1,6 +1,5 @@
 #include "Differential.h"
-#include <cstdint>
-#include <stdint.h>
+
 
 /*========================================= ELECTRONIC DIFFERENTIAL =========================================*/
 // Calculates the Velocity [in Rad/s] of each wheel during a turn, W1 = [LEFT WHEEL] || W2 = [RIGHT WHEEL]

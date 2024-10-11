@@ -65,11 +65,11 @@ void MotorCAN:: send_to_controller(unsigned int Motor_Id, uint16_t DC_pwm){
 
     //if message was not sent as it should, sends it again 
     if(!write(inverter_tx_msg) ) {
-        printf("\nNot sent");
+        DEBUG_PRINT_CAN("\n[CAN]: Not sent");
         reset_can();
         // write(inverter_tx_msg);
     }else{
-        printf("\nSENT: %d", DC_pwm);
+        DEBUG_PRINT_CAN("\n[CAN]: SENT %d", DC_pwm);
 
     }
 
@@ -109,7 +109,7 @@ RxStruct MotorCAN:: receive_from_inverter(unsigned int Inverter_Id){
                 // Voltage 
                 Voltage_Hb = inverter_rx_msg.data[0] >> 4;
                 Voltage_int = (Voltage_Hb<<8) | inverter_rx_msg.data[1];
-                Datafield.Supply_Voltage = Voltage_int/10.0f;
+                Datafield.Supply_Voltage =float(Voltage_int)/10;
 
                 // Temperature
                 Datafield.Temp_Controller = inverter_rx_msg.data[2]-100; //Range[0-255],Temp Range [-100°C to 155°C]
@@ -174,7 +174,7 @@ RxStruct MotorCAN:: receive_from_inverter(unsigned int Inverter_Id){
 
 /*====================================== MOTOR/MOTOR CONTROLLER ERROR CHECK ======================================*/
 // Checks if the motor sent 
-bool Temperature_Shutdown(RxStruct Controller_1, RxStruct Controller_2){
+bool Temperature_Check(RxStruct Controller_1, RxStruct Controller_2){
     bool Temperature_Shutdown{0};
 
     int16_t Tm_1 = Controller_1.Temp_motor; 
@@ -183,25 +183,14 @@ bool Temperature_Shutdown(RxStruct Controller_1, RxStruct Controller_2){
     int16_t Tc_2 = Controller_2.Temp_Controller;
     
     // if Temperature is above limit, shuts the car down
-    Temperature_Shutdown = (Tm_1> MAX_TEMP_MOTOR) || (Tm_2> MAX_TEMP_MOTOR);
-    Temperature_Shutdown = Temperature_Shutdown || (Tc_1> MAX_TEMP_CONTROLLER) || (Tc_2> MAX_TEMP_CONTROLLER);
+    Temperature_Shutdown = (Tm_1 > MAX_TEMP_MOTOR) || (Tm_2 > MAX_TEMP_MOTOR);
+    Temperature_Shutdown = Temperature_Shutdown || (Tc_1 > MAX_TEMP_CONTROLLER) || (Tc_2 > MAX_TEMP_CONTROLLER);
     
     if(Temperature_Shutdown){
-        printf("[Powertrain]: TEMPERATURE SHUTDOWN ACTIVATED");
+        DEBUG_PRINT_CAN("\n[Powertrain]: TEMPERATURE SHUTDOWN ACTIVATED");
     }
     return Temperature_Shutdown;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -220,20 +209,20 @@ void MotorCAN::Print_Datafields(){
 }
 
 void MotorCAN::Print_Datafield(int Num, RxStruct Inv){
-    printf("\r\n\t[CAN] Controller [%d]: msg[%d], Volt=%.1f V, T_Ctrl= %d°C ,T_Motor = %d°C", 
+    DEBUG_PRINT_CAN("\r\n\t[CAN] Controller [%d]: MSG[%d], Volt=%.1f V, T_Ctrl= %d°C ,T_Motor = %d°C", 
     Num,Inv.Msg_Counter, Inv.Supply_Voltage ,Inv.Temp_Controller ,Inv.Temp_motor);
     
-    printf(" , RPM = %d, PWM = %.2f (%.2f %%), Ic= %d A",
+    DEBUG_PRINT_CAN(" , RPM = %d, PWM = %.2f (%.2f %%), Ic= %d A",
     Inv.RPM , Inv.PWM_read, (Inv.PWM_read/255.0f)*100,Inv.Current );
 }
 
 void Print_Datafield(int Num,RxStruct Motor_Data){
-    printf("\r\n\t[CAN] Controller %d: Volt=%.1f V , RPM = %d , Ic= %d A", 
-    Num, Motor_Data.Supply_Voltage , Motor_Data.RPM , Motor_Data.Current );
+    DEBUG_PRINT_CAN("\r\n\t[CAN] Controller [%d]: MSG[%d]: Volt=%.1f V , RPM = %d , Ic= %d A", 
+    Num, Motor_Data.Msg_Counter , Motor_Data.Supply_Voltage , Motor_Data.RPM , Motor_Data.Current );
     
     // Dc Pwm
-    printf(" PWM = %.2f , (%.2f %%)", Motor_Data.PWM_read, (float(Motor_Data.PWM_read)/65535)*100);
+    DEBUG_PRINT_CAN(" PWM = %.2f , (%.2f %%)", Motor_Data.PWM_read, (float(Motor_Data.PWM_read)/65535)*100);
 
     // Temperature
-    printf(" Tc= %d°C , Tm = %d°C", Motor_Data.Temp_Controller , Motor_Data.Temp_motor);
+    DEBUG_PRINT_CAN(" Tc= %d°C , Tm = %d°C", Motor_Data.Temp_Controller , Motor_Data.Temp_motor);
 }
