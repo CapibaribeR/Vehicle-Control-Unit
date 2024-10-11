@@ -5,5 +5,5 @@ The Vehicle control Unit (or VCU) is responsible for data acquisition (from sens
 
 To decrease the complexity of the main code and improve it's safety, a few header files were created and placed on this folder:
 ```
-Lib.h
+Lib
 ```
