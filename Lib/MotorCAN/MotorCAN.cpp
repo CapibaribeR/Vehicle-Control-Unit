@@ -65,11 +65,11 @@ void MotorCAN:: send_to_controller(unsigned int Motor_Id, uint16_t DC_pwm){
 
     //if message was not sent as it should, sends it again 
     if(!write(inverter_tx_msg) ) {
-        DEBUG_PRINT_CAN("\n[CAN]: Not sent");
+        DEBUG_PRINT_CAN("\n[MOTOR CAN]: Not sent");
         reset_can();
         // write(inverter_tx_msg);
     }else{
-        DEBUG_PRINT_CAN("\n[CAN]: SENT %d", DC_pwm);
+        DEBUG_PRINT_CAN("\n[MOTOR CAN]: SENT %d", DC_pwm);
 
     }
 

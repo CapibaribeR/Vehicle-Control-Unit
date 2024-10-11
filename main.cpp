@@ -260,20 +260,38 @@ void Controller_CAN_ISR(){
 
 
 
+/*Message Sent to the TCU*/
+void General_CAN_Send(RxStruct Motor_1, RxStruct Motor_2){
+    float Vel;
+    uint8_t Temp_Motor_1;
+    uint8_t Temp_Motor_2;
 
-// void General_CAN_Send(){
-//     float Vel;
+    uint8_t Input_Voltage = uint8_t(Motor_1.Supply_Voltage*10);
 
-//     CANMessage Msg;
-//     Msg.id=1;
-//     Msg.len=8;
-//     Msg.data[0]=1;      // Car's Velocity
-//     Msg.data[1]=1;      //?
-//     Msg.data[2]=1;      //?
-//     Msg.data[3]=1;      //?
-//     Msg.data[4]=1;      //?
-//     Msg.data[5]=1;      //?
-//     Msg.data[6]=1;      //?
-//     Msg.data[7]=1;      //?
+    CANMessage Msg;
+    Msg.id=1;
+    Msg.len=8;
+    
+    Msg.data[0] = Input_Voltage & 0xFF;     // LSB Input Voltage (V)
+    Msg.data[1] = Input_Voltage >> 8;       // MSB Input Voltage (V)
+    
+    Msg.data[2] = Motor_1.Temp_motor;       // Motor 1 Temperature (°C)
+    Msg.data[3] = Motor_2.Temp_motor;       // Motor 2 Temperature (°C)
+    
+    Msg.data[4] = Motor_1.Current;          // Motor 1 Phase Current
+    Msg.data[5] = Motor_2.Current ;         // Motor 2 Phase Current
+    
+    Msg.data[6] = Motor_1.RPM & 0xFF;       // LSB RPM Motor 1
+    Msg.data[7] = Motor_1.RPM >> 8;         // MSB RPM Motor 2
 
-// }
+    // //if message was not sent as it should, sends it again 
+    // if(!write(inverter_tx_msg) ) {
+    //     DEBUG_PRINT_CAN("\n[CAN]: Not sent");
+    //     reset_can();
+    //     // write(inverter_tx_msg);
+    // }else{
+    //     DEBUG_PRINT_CAN("\n[CAN]: SENT");
+    // }
+
+
+}
