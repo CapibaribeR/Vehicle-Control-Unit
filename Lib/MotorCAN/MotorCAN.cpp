@@ -8,21 +8,21 @@ MotorCAN::MotorCAN(PinName _can_pin_rx, PinName _can_pin_tx, uint32_t _can_frequ
     _can_frequency) {}
 
 /*================================== METHODS ==================================*/
-/* */
-void MotorCAN:: set_CAN(){
+/*CAN setup */
+void MotorCAN::set_CAN(){
     mode(CAN::Normal);
     filter(0, 0, CANStandard);
 }
 
 /* Resets CAN chanel */
-void MotorCAN:: reset_can() {  
+void MotorCAN::reset_can() {  
     reset();
     mode(CAN::Normal);
     filter(0, 0, CANStandard); // reconfigurar o filtro para receber todas as mensagens
 }
 
 /* Tests if CAN can send messages (Creates empy CAN message and tests if it was sent) */
-bool MotorCAN:: baud_test(){
+bool MotorCAN::baud_test(){
     CANMessage msg;
     return write(msg);    
 }
@@ -136,31 +136,31 @@ RxStruct MotorCAN:: receive_from_inverter(unsigned int Inverter_Id){
 }
 
 
-// RxStruct receive_from_controller(unsigned int Inverter_Id){
-//     RxStruct Datafield;
-//     CANMessage Controller_Rx_msg;
+// MotorData receive_from_controller(unsigned int Controller_Id){
+//     MotorData Datafield;
+//     CANMessage ControllerMsg;
 //     int Voltage_Hb;         //voltage High byte
 //     int Voltage_int;        // Voltage value
 
-//     if(read(Controller_Rx_msg)){
+//     if(read(ControllerMsg)){
 //         // Msg Counter
-//         Datafield.Msg_Counter = Controller_Rx_msg.data[0] & 0xF;
+//         Datafield.Msg_Counter = ControllerMsg.data[0] & 0xF;
         
 //         // Voltage 
-//         Voltage_Hb = Controller_Rx_msg.data[0] >> 4;
-//         Voltage_int = (Voltage_Hb<<8) | Controller_Rx_msg.data[1];
+//         Voltage_Hb = ControllerMsg.data[0] >> 4;
+//         Voltage_int = (Voltage_Hb<<8) | ControllerMsg.data[1];
 //         Datafield.Supply_Voltage = float(Voltage_int)/10;
         
 //         // Temperature
-//         Datafield.Temp_Controller = Controller_Rx_msg.data[2]-100; //Range[0-255],Temp Range [-100°C to 155°C]
-//         Datafield.Temp_motor = Controller_Rx_msg.data[3]-100;     //Range[0-255],Temp Range [-100°C to 155°C]
+//         Datafield.Temp_Controller = ControllerMsg.data[2]-100; //Range[0-255],Temp Range [-100°C to 155°C]
+//         Datafield.Temp_motor = ControllerMsg.data[3]-100;     //Range[0-255],Temp Range [-100°C to 155°C]
         
 //         // Velocity (RPM)
-//         Datafield.RPM= (Controller_Rx_msg.data[5]<< 8) | Controller_Rx_msg.data[4] ;
+//         Datafield.RPM= (ControllerMsg.data[5]<< 8) | ControllerMsg.data[4] ;
         
 //         // Duty Cycle and Current  
-//         Datafield.PWM_read=(Controller_Rx_msg.data[6]/255.0f)*100;
-//         Datafield.Current = Controller_Rx_msg.data[7]; 
+//         Datafield.PWM_read=(ControllerMsg.data[6]/255.0f)*100;
+//         Datafield.Current = ControllerMsg.data[7]; 
 //     }
 //     else{
 //         printf("\n[CAN MOTOR]: ERROR WHILE READING MESSAGE");

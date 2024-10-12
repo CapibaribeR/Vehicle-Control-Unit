@@ -33,12 +33,12 @@ bool BSE_Error_check(uint16_t Apps_val, uint16_t Brake_val, uint8_t *flag_BPPC){
     bool Error_BPPC = *flag_BPPC;
 
     //If APPS >= 25% of pedal travel and Brake is pressed, stops the car 
-    if ( (Apps_val >= 25) && (Brake_val >= 3) ){
+    if ( (Apps_val >= 0.25*UINT16_MAX) && (Brake_val >= 0.03*UINT16_MAX) ){
         Error_BPPC = 1;
     }
 
     // Error only Stops if APPS goes below 5% of pedal travel
-    if(Apps_val < 5){
+    if(Apps_val < 0.05*UINT16_MAX){
         Error_BPPC = 0;
     }
 
@@ -51,26 +51,20 @@ bool BSE_Error_check(uint16_t Apps_val, uint16_t Brake_val, uint8_t *flag_BPPC){
 }
 
 
-
-
-
 /*================================== Angle Sensors ==================================*/
 // Constructors
-AnalogSensor::AnalogSensor(PinName adc_Pin, float _volt_min,float _volt_max, float _angle_min,float _angle_max)
-    :ADC_Pin{adc_Pin,VREF_ADC},
-     Volt_min{_volt_min},
-     Volt_max{_volt_max},
-     Angle_min{_angle_min},
-     Angle_max{_angle_max}
+AnalogSensor::AnalogSensor(PinName adc_Pin)
+    :ADC_Pin{adc_Pin,VREF_ADC}
     { ADC_Pin.set_reference_voltage(3.3); };
+
 
 // Methods
 /* Reads the ADC pin and returns the angle value in degrees */ 
-float AnalogSensor:: read_angle(){
+float AnalogSensor:: read_steering(){
     float New_ADC = ADC_Pin.read_voltage();
     
-    /* Tests if ADC voltage read is within the sensor's bounds [short or open circuit] */
-    if(New_ADC<Volt_min || New_ADC>Volt_max){
+    // Tests if ADC voltage read is within the sensor's bounds [short or open circuit]
+    if(New_ADC<VOLT_MIN || New_ADC>VOLT_MAX){
         printf("\nCIRCUIT: ERROR DETECTED\n");
         Circuit_ERROR=1;
     }
@@ -81,19 +75,34 @@ float AnalogSensor:: read_angle(){
     // If variation is bigger than the expected noise, updates measurement 
     if(abs(New_ADC - Current_ADC) > MAX_NOISE){
         Current_ADC= New_ADC;
-        Angle= map(Current_ADC, Volt_min, Volt_max, Angle_min, Angle_max);
-    }
+
+        // Left Turn [0.3V - 1.6V]
+        if(New_ADC >=0.3 || New_ADC <= 1.6){
+            Angle = (New_ADC-VOLT_MIN)*STEERING_MIN/1.3;
+        }
+
+        // For low angles, it's zero [1.6V - 2.0v]
+        if(New_ADC > 1.6 || New_ADC <= 2){
+            Angle = 0;
+        }   
+
+        // Right Turn [2.0V - 3.3V]
+        if(New_ADC>2){
+            Angle = (New_ADC-2)*STEERING_MAX/1.3;
+        }  
+    
+    } 
 
     return Angle;
 }
 
 
-
-float AnalogSensor:: read_brake(){
+/*Reads Brake Pedal*/
+float PedalSensor:: read_brake(){
     float New_ADC = ADC_Pin.read_voltage();
     
-    /* Tests if ADC voltage read is within the sensor's bounds [short or open circuit] */
-    if(New_ADC<Volt_min || New_ADC>Volt_max){
+    // Tests if ADC voltage read is within the sensor's bounds [short or open circuit]
+    if(New_ADC<VOLT_MIN || New_ADC>VOLT_MAX){
         printf("\nCIRCUIT: ERROR DETECTED\n");
         Circuit_ERROR=1;
     }
@@ -104,10 +113,11 @@ float AnalogSensor:: read_brake(){
     // If variation is bigger than the expected noise, updates measurement 
     if(abs(New_ADC - Current_ADC) > MAX_NOISE){
         Current_ADC= New_ADC;
-        Angle= map(Current_ADC, Volt_min, Volt_max, Angle_min, Angle_max);
+        Angle= map(Current_ADC, VOLT_MIN, VOLT_MAX, 0, 100);
     }
 
-    if(Angle>MIN_BRAKE_VOLT){
+    // Turn Brake Light on or off
+    if(Current_ADC > MIN_BRAKE_VOLT){
            BRAKE_LIGT.write(1);
     }
     else{
@@ -116,47 +126,44 @@ float AnalogSensor:: read_brake(){
     return Angle;
 }
 
-
-
-
-
-
-/* */
+/*Returns if the circuit is short circuited */
 bool AnalogSensor::get_circuit_error(){      
     return Circuit_ERROR;
 }
 
-
 /* Prints voltage read and 16b */
 void AnalogSensor:: Voltage_print(){
-    uint16_t Voltage_16bit=ADC_Pin.read_u16();
-    printf("\n[VCU] ADC: Voltage_Read[16bit]: %d , Voltage[V]: %.2f V ",Voltage_16bit, ADC_Pin.read_voltage() );    
+    printf("\n[VCU] ADC: Voltage_Read[16bit]: %d , Voltage[V]: %.2f V ",ADC_Pin.read_u16(), ADC_Pin.read_voltage());    
     printf("Angle: %.2f\n", Angle);
 }
 
 
 /*====================================== Pedal Sensors ======================================*/
 // Constructors
-PedalSensor::PedalSensor(PinName adc_Pin, float _volt_min, float _volt_max)
-    :AnalogSensor{adc_Pin, _volt_min, _volt_max, PEDAL_MIN, PEDAL_MAX}{}
+PedalSensor::PedalSensor(PinName adc_Pin)
+    :AnalogSensor{adc_Pin}{}
 
 // Methods
 /* Reads the Pedal travel [0% = 0 | 100% = 16b] */
 uint16_t PedalSensor:: read_pedal(){
     float New_ADC = ADC_Pin.read_voltage();
 
-    if(New_ADC<Volt_min || New_ADC>Volt_max){
+    if(New_ADC<VOLT_MIN || New_ADC>VOLT_MAX){
         
     }
     // printf("\n NEW: %.2f , Current: %.2f, dif: %.2f\n",New_ADC, Current_ADC,abs(New_ADC - Current_ADC));
     // If variation is bigger than the expected noise, updates measurement 
     if(abs(New_ADC - Current_ADC) > MAX_NOISE){
         Current_ADC= New_ADC;
-        Pedal_pos= map_u16(Current_ADC, Volt_min, Volt_max, PEDAL_MIN, UINT16_MAX);
+        Pedal_pos= map_u16(Current_ADC, VOLT_MIN, VOLT_MAX, PEDAL_MIN, UINT16_MAX);
     }
 
     if(Current_ADC< 0.8){
         Pedal_pos =0;
+    }
+
+    if(Current_ADC > 3.1){
+        Pedal_pos = UINT16_MAX;
     }
 
     return Pedal_pos;
@@ -168,17 +175,8 @@ void PedalSensor:: Voltage_print(){
     float Percentage=(float(Voltage_16bit)/65535)*100;
 
     printf("\n[VCU] ADC: Voltage_Read[16bit]: %d , Voltage[V]: %.2f V ",Voltage_16bit, ADC_Pin.read_voltage() );    
-    printf("\nPower [%%]: %.2f %%\n",Percentage);
+    printf("\nPedal Pressed: [%%]: %.2f %%\n",Percentage);
 }
-
-
-/*================================== Steering Wheel Sensor ==================================*/
-// Constructos
-SteeringSensor::SteeringSensor(PinName adc_Pin, float _volt_min, float _volt_max)
-    :AnalogSensor{adc_Pin, _volt_min, _volt_max, Vol_ang_min, Vol_ang_max}{}
-
-
-
 
 
 

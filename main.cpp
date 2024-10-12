@@ -17,6 +17,7 @@
 #include <AnalogSensor.h>           // Sensors (APPS, Brake, Steering Wheel)
 #include <Differential.h>           // Electronic Differential
 #include <MotorCAN.h>               // CAN 2.0 Communication with the motor controller
+#include <GeneralCAN.h>             //
 
 // DEBUG MODE
 #define DEBUG
@@ -40,15 +41,15 @@
 
 /*===================================== COMMUNICATION PORTS (STM32 F746ZG) =====================================*/
 // CAN 1: General communication in the VCU
-// #define CAN1_RX                 PB_8
-// #define CAN1_TX                 PB_9
+#define CAN1_RX                 PD_0
+#define CAN1_TX                 PD_1
 
 // CAN 2: Communication with the motor controller
 #define CAN2_RX                 PB_8
 #define CAN2_TX                 PB_9
 
 // CAN frequency in Hz (bit/s)
-// #define CAN1_FREQUENCY           1e6
+#define CAN1_FREQUENCY           500e3      // CAN Communication with TCU and BMS
 #define CAN2_FREQUENCY           1e6        // for CAN 2.0, its 1MHz [1Mbit/s] [Mandatory]
 
 
@@ -72,18 +73,19 @@ void send_to_controller(unsigned int Motor_Id, uint16_t DC_pwm);
 
 /*=================================================== Objetcs =====================================================*/
 // Communication
-// CAN CAN_General(CAN1_RX, CAN1_TX, CAN2_FREQUENCY);                                          // VCU general CAN
-MotorCAN CAN_Motor(CAN2_RX, CAN2_TX, CAN2_FREQUENCY);                                   // Motor/Inverter CAN
+// CAN CAN_General(CAN1_RX, CAN1_TX, CAN2_FREQUENCY);           // VCU general CAN
+MotorCAN CAN_Motor(CAN2_RX, CAN2_TX, CAN2_FREQUENCY);           // Motor/Inverter CAN
+GeneralCAN CAN_TCU(CAN1_RX, CAN1_TX, CAN1_FREQUENCY);           // Motor/Inverter CAN
 
 // Pedal and Steering wheel Sensors
-PedalSensor BSE(BSE_PIN, BSE_VMIN, BSE_VMAX);                                           // Brake Pedal sensor
-PedalSensor APPS_1(APPS1_PIN ,APPS1_VMIN, APPS1_VMAX);                                  // Accel. Pedal sensor 1
-PedalSensor APPS_2(APPS2_PIN, APPS2_VMIN, APPS2_VMAX);                                  // Accel. Pedal sensor 2
-SteeringSensor Steering_sensor (Steering_WHEEL_PIN, STEERING_VMIN, STEERING_VMAX);      // Steering Wheel sensor
+PedalSensor BSE(BSE_PIN);                                       // Brake Pedal sensor
+PedalSensor APPS_1(APPS1_PIN);                                  // Accel. Pedal sensor 1
+PedalSensor APPS_2(APPS2_PIN);                                  // Accel. Pedal sensor 2
+AnalogSensor Steering_sensor (Steering_WHEEL_PIN);              // Steering Wheel sensor
 
 // Digital Pins
-DigitalIn StartButton(START_BUTTON_PIN,PullDown);                                       // Start Button input 
-DigitalOut RTDS_Buzzer(RTDS_PIN,0);                                                     // Ready-To-Drive Sound(Buzzer)
+DigitalIn StartButton(START_BUTTON_PIN,PullDown);               // Start Button input 
+DigitalOut RTDS_Buzzer(RTDS_PIN,0);                             // Ready-To-Drive Sound(Buzzer)
 
 // Threads
 Thread ControlThread(osPriorityNormal, 6096);
@@ -113,6 +115,7 @@ int main(){
 
     // Comm. system Initializaion   
     CAN_Motor.set_CAN();
+    CAN_TCU.set_CAN();
 
     // Powertrain & motor control
     ControlThread.start(OpenLoop);
@@ -120,13 +123,8 @@ int main(){
 /*=========================================== MAIN LOOP ===========================================*/
     while (true) {
         // SafetyCheck();
-        // Controller_CAN_ISR();
-        // send_to_controller(unsigned int Motor_Id, uint16_t DC_pwm)
-        // Controller_CAN_ISR();
-        // send_to_controller(CONTROLLER_TX_ID_2, 65535);
+        // CAN_TCU.send_to_TCU(Controller1_data, Controller2_data);
         ThisThread::sleep_for(100ms);
-        // CAN_Motor.send_to_controller_1(10000);
-        // CAN_Motor.send_to_controller_2(10000);
     }
 }
 
@@ -148,9 +146,9 @@ bool ReadyToDrive(){
 /* Safety Check: Every 20 ms*/
 void SafetyCheck(){
     /* Read all sensors*/
-    float Apps_1 = APPS_1.read_angle();
-    float Apps_2 = APPS_2.read_angle();
-    float Brake_val = BSE.read_angle();
+    float Apps_1 = APPS_1.read_pedal();
+    float Apps_2 = APPS_2.read_pedal();
+    float Brake_val = BSE.read_pedal();
 
     // Check for errors
     Error_State = BSE_Error_check(Apps_1, Brake_val, &BSE_Flag) || APPS_Error_check(Apps_1, Apps_2, &Apps_Flag) ;
@@ -171,14 +169,13 @@ void OpenLoop(){
         Controller1_data = CAN_Motor.receive_from_inverter_1();
         Controller2_data = CAN_Motor.receive_from_inverter_2();
 
-        // Controller_CAN_ISR();
-        // Controller_CAN_ISR();
-        // Print_Datafield(2, Controller2_data);
+        // Sends Motor data to the TCU
+        CAN_TCU.send_to_TCU(Controller1_data, Controller2_data);
 
         // Read Sensor Data
         apps = APPS_1.read_pedal();
         brake = BSE.read_brake();
-        Steering = Steering_sensor.read_angle();
+        Steering = Steering_sensor.read_steering();
 
         // Open Loop without Differential        
         Dc_Motor[0]= apps;
@@ -192,8 +189,6 @@ void OpenLoop(){
         DEBUG_PRINT("\nSteering:  %.3f", Steering);
 
         // Check for Errors
-        // Error_State =0;
-        // brake=0;
         // if (Error_State or brake>3){
         //     Dc_Motor[0] = 0;
         //     Dc_Motor[1] = 0;
@@ -204,7 +199,7 @@ void OpenLoop(){
         
         // Send data to Controller
         CAN_Motor.send_to_controller_1( Dc_Motor[0] );     // Send control Signal to Controller 1
-        CAN_Motor.send_to_controller_2( Dc_Motor[1 ] );     // Send control Signal to Controller 2
+        CAN_Motor.send_to_controller_2( Dc_Motor[1 ] );     // Send control Signal to Controller 2    
         ThisThread::sleep_for(100ms);
     }
 
@@ -260,38 +255,38 @@ void Controller_CAN_ISR(){
 
 
 
-/*Message Sent to the TCU*/
-void General_CAN_Send(RxStruct Motor_1, RxStruct Motor_2){
-    float Vel;
-    uint8_t Temp_Motor_1;
-    uint8_t Temp_Motor_2;
+// /*Message Sent to the TCU*/
+// void General_CAN_Send(RxStruct Motor_1, RxStruct Motor_2){
+//     float Vel;
+//     uint8_t Temp_Motor_1;
+//     uint8_t Temp_Motor_2;
 
-    uint8_t Input_Voltage = uint8_t(Motor_1.Supply_Voltage*10);
+//     uint8_t Input_Voltage = uint8_t(Motor_1.Supply_Voltage*10);
 
-    CANMessage Msg;
-    Msg.id=1;
-    Msg.len=8;
+//     CANMessage Msg;
+//     Msg.id=1;
+//     Msg.len=8;
     
-    Msg.data[0] = Input_Voltage & 0xFF;     // LSB Input Voltage (V)
-    Msg.data[1] = Input_Voltage >> 8;       // MSB Input Voltage (V)
+//     Msg.data[0] = Input_Voltage & 0xFF;     // LSB Input Voltage (V)
+//     Msg.data[1] = Input_Voltage >> 8;       // MSB Input Voltage (V)
     
-    Msg.data[2] = Motor_1.Temp_motor;       // Motor 1 Temperature (°C)
-    Msg.data[3] = Motor_2.Temp_motor;       // Motor 2 Temperature (°C)
+//     Msg.data[2] = Motor_1.Temp_motor;       // Motor 1 Temperature (°C)
+//     Msg.data[3] = Motor_2.Temp_motor;       // Motor 2 Temperature (°C)
     
-    Msg.data[4] = Motor_1.Current;          // Motor 1 Phase Current
-    Msg.data[5] = Motor_2.Current ;         // Motor 2 Phase Current
+//     Msg.data[4] = Motor_1.Current;          // Motor 1 Phase Current
+//     Msg.data[5] = Motor_2.Current ;         // Motor 2 Phase Current
     
-    Msg.data[6] = Motor_1.RPM & 0xFF;       // LSB RPM Motor 1
-    Msg.data[7] = Motor_1.RPM >> 8;         // MSB RPM Motor 2
+//     Msg.data[6] = Motor_1.RPM & 0xFF;       // LSB RPM Motor 1
+//     Msg.data[7] = Motor_1.RPM >> 8;         // MSB RPM Motor 2
 
-    // //if message was not sent as it should, sends it again 
-    // if(!write(inverter_tx_msg) ) {
-    //     DEBUG_PRINT_CAN("\n[CAN]: Not sent");
-    //     reset_can();
-    //     // write(inverter_tx_msg);
-    // }else{
-    //     DEBUG_PRINT_CAN("\n[CAN]: SENT");
-    // }
+//     // //if message was not sent as it should, sends it again 
+//     // if(!write(inverter_tx_msg) ) {
+//     //     DEBUG_PRINT_CAN("\n[CAN]: Not sent");
+//     //     reset_can();
+//     //     // write(inverter_tx_msg);
+//     // }else{
+//     //     DEBUG_PRINT_CAN("\n[CAN]: SENT");
+//     // }
 
 
-}
+// }
