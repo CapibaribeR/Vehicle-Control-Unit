@@ -54,17 +54,10 @@ Thread ControlThread(osPriorityNormal, 4096);                   //
 /* ============ Aux Functions ============ */
 // Control Systems
 void OpenLoop();                // Open Loop Control
-void RunControl();              // Closed Loop Control
 
 // Safety
-void PlausibilityCheck();       //
 void SafetyCheck();             // APPS + Brake plausibility and Temperature shutdown
 bool ReadyToDrive();            // 1: Ready + Plays Buzzer , 0: Not Ready
-
-// Communication
-void Controller_CAN_ISR();
-void VCU_CAN_ISR();
-void ReadCAN();                 //
 
 
 /* ============ Global  Variables ============ */
@@ -150,9 +143,10 @@ void SafetyCheck(){
     // Check for errors
     bool APPS_Error = APPS_Error_check(Apps_1, Brake_val, &BSE_Flag);
     bool BSE_Error = BSE_Error_check(Apps_1, Apps_2, &Apps_Flag);
+    bool Circuit_Error = APPS_1.Error_Flag | APPS_2.Error_Flag | BSE.Error_Flag;
     
-    //
-    Error_State = APPS_Error || BSE_Error || Overheating_Flag;
+    // Sets flag if there's an error
+    Error_State = APPS_Error || BSE_Error || Overheating_Flag || Circuit_Error;
 }
 
 
@@ -160,26 +154,25 @@ void SafetyCheck(){
 void OpenLoop(){
     uint16_t Dc_Motor[2]{0};    // Control Signal
     uint16_t apps;              // Acc. Pedal
-    uint16_t brake;             // Brake Pedal
+    float brake;             // Brake Pedal
     float Steering_dg;          // Steering Wheel
 
     while(true){
-        // Read Sensor Data
+        // Read Sensor's Data
         apps = APPS_1.read_pedal();
-        brake = BSE.read_pedal();
+        brake = BSE.read_angle();
         Steering_dg = Steering_sensor.read_angle();
-        // APPS_1.Voltage_print();
-        // BSE.Voltage_print();
         
         // Open Loop without Differential        
         Dc_Motor[0]= apps;
         Dc_Motor[1]= apps;
 
         // Open Loop with Differential
-        // OpenLoopDifferential(Steering_dg, apps, Dc_Motor);
+        OpenLoopDifferential(Steering_dg, apps, Dc_Motor);
 
-        DEBUG_PRINT("\nAPPS:  %f", apps);
-        DEBUG_PRINT("\nBrake: %f", float(brake)/UINT16_MAX);
+        // Pedal Travel Percentage [0 - 100]
+        DEBUG_PRINT("\nAPPS:  %.2f, [%d]", (float(apps)/UINT16_MAX)*100, apps);
+        DEBUG_PRINT("\nBrake: %.2f", brake);
 
         // Check for Errors
         Error_State =0;
@@ -189,9 +182,9 @@ void OpenLoop(){
             Dc_Motor[1] = 0;
         }
         
-        // Print Control Signal
+        // Print Control Signal Percentage [0 - 100]
         DEBUG_PRINT("\nMotor 1: %.2f%%  || Motor 2: %.2f%%",
-        float(Dc_Motor[0])/UINT16_MAX,float(Dc_Motor[1])/UINT16_MAX);
+        (float(Dc_Motor[0])/UINT16_MAX)*100, (float(Dc_Motor[1])/UINT16_MAX)*100);
         
         // Send data to Inverters 
         CAN_Motor.send_to_controller_1( Dc_Motor[0] );     // Send control Signal to Controller 1
