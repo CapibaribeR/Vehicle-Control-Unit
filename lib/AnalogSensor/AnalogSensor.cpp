@@ -27,6 +27,39 @@ bool APPS_Error_check(uint16_t Apps_1, uint16_t Apps_2, uint8_t* Error_Count){
 
 }
 
+
+bool APPS_Error_check(uint16_t Apps_1, uint16_t Apps_2, uint8_t time_c, int flag, long error_start_ms){
+    long current_time{0};   // Current time in ms, if not implausible its euqal 
+
+    // Checks 10% discrepancy
+    if ( abs(Apps_1 - Apps_2) > (0.1 * max(Apps_1, Apps_2)) ){
+        // Gets a reference (start time), when
+        if(error_start_ms==0){
+            error_start_ms= current_ms();
+        }
+        // Continues to track time while implausable
+        current_time = current_ms();
+    }
+    else { 
+        // if error ceased, resets timers
+        error_start_ms = 0;      
+        current_time   = 0;
+        return 0;
+    }
+
+    // If Implausibility lasts more than 100ms (100ms - 120 ms response time), Sets Error
+    if(current_time - error_start_ms > 100){
+        printf("APPS ERROR DETECTED");
+        return 1;
+    }
+    else{
+        return 0;
+    }
+ 
+}
+
+
+
 /*====================================== BRAKE PEDAL PLAUSIBILITY CHECK ======================================*/
 // Checks if the Accel. and Brake Were both pressed at the same time
 bool BSE_Error_check(uint16_t Apps_val, uint16_t Brake_val, uint8_t *flag_BPPC){    
@@ -51,6 +84,19 @@ bool BSE_Error_check(uint16_t Apps_val, uint16_t Brake_val, uint8_t *flag_BPPC){
 }
 
 
+/*====================================== OPEN CIRCUIT/ SHORT CIRCUIT ERROR ======================================*/
+// Tests if ADC voltage read is within the sensor's bounds [short or open circuit]
+bool Circuit_Error_Check(float voltage_in){
+    if(voltage_in < INPUT_MIN || voltage_in > INPUT_MAX){
+        printf("\nCIRCUIT: ERROR DETECTED\n");
+        return 1;
+    }
+    else{
+        return 0;
+    }
+}
+
+
 
 /*================================== Angle Sensors ==================================*/
 // Constructors
@@ -67,13 +113,10 @@ AnalogSensor::AnalogSensor(PinName adc_Pin, float _volt_min,float _volt_max, flo
 float AnalogSensor:: read_angle(){
     float New_ADC = ADC_Pin.read_voltage();
     
-    /* Tests if ADC voltage read is within the sensor's bounds [short or open circuit] */
-    if(New_ADC<Volt_min || New_ADC>Volt_max){
-        printf("\nCIRCUIT: ERROR DETECTED\n");
-        Circuit_ERROR=1;
-    }
-    else{
-        Circuit_ERROR=0;
+    // Tests if there's a short or open circuit
+    if(Circuit_Error_Check(New_ADC)){
+        Error_Flag = 1;
+        return 0;
     }
 
     // If variation is bigger than the expected noise, updates measurement 
@@ -82,20 +125,8 @@ float AnalogSensor:: read_angle(){
         Angle= map(Current_ADC, Volt_min, Volt_max, Angle_min, Angle_max);
     }
 
-    if(Angle>MIN_BRAKE_VOLT){
-           BRAKE_LIGT.write(1);
-    }
-    else{
-           BRAKE_LIGT.write(0);
-    }
     return Angle;
 }
-
-/* */
-bool AnalogSensor::get_circuit_error(){      
-    return Circuit_ERROR;
-}
-
 
 /* Prints voltage read and 16b */
 void AnalogSensor:: Voltage_print(){
@@ -126,7 +157,7 @@ uint16_t PedalSensor:: read_pedal(){
     // If variation is bigger than the expected noise, updates measurement 
     if(abs(New_ADC - Current_ADC) > MAX_NOISE){
         Current_ADC= New_ADC;
-        Pedal_pos= map_u16(Current_ADC, Volt_min, Volt_max, PEDAL_MIN, UINT16_MAX);
+        Pedal_pos= map_u16(Current_ADC, Volt_min, Volt_max, 0, 100);
     }
 
     return Pedal_pos;
@@ -154,29 +185,31 @@ SteeringSensor::SteeringSensor(PinName adc_Pin)
 
 /*======================================== Auxiliar functions ========================================*/
 //time passed (in ms) since the program first started
-inline unsigned long current_ms(){
+unsigned long current_ms(){
     using namespace std::chrono;
     auto now_us = time_point_cast<microseconds>(Kernel::Clock::now());      //time of referece= program's begin
     unsigned long micros = now_us.time_since_epoch().count();               //time (in us) since the reference 
     return micros / 1000.0;                                                 //turns time passed from us to ms
 }
 
-//Maps the ADC float voltage read into the angle's range 
-inline float map (float Variable, float in_min, float in_max, float out_min, float out_max) {
+//Maps the ADC float voltage read into the angle's range  [In_min, In_Max] -> [out_min, out_max]
+float map (float Variable, float in_min, float in_max, float out_min, float out_max) {
     float Mapped_Variable = (Variable - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
     
-    // Saturation + Out of bounds variable
+    // If
     if (Variable >= in_max ) {
         Mapped_Variable= out_max;    
     }
+    // If
     if (Variable <= (in_min + SATURATION_VOLTAGE) ) {
         Mapped_Variable= out_min;    
     }
+    
     return Mapped_Variable;
 }
 
 //Maps the ADC float voltage read into 16bit 
-inline uint16_t map_u16 (float Variable, float in_min, float in_max, uint16_t out_min, uint16_t out_max) {
+uint16_t map_u16 (float Variable, float in_min, float in_max, uint16_t out_min, uint16_t out_max) {
     uint16_t Mapped_Variable = (Variable - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
     
     // Saturation + Out of bounds variable

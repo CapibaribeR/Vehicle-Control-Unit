@@ -149,8 +149,8 @@ void MotorCAN::Print_Datafield(int Num, RxStruct Inv){
 }
 
 void Print_Datafield(int Num,RxStruct Motor_Data){
-    printf("\r\n\t[CAN] Controller %d: Volt=%.1f V , RPM = %d , Ic= %d A", 
-    Num, Motor_Data.Supply_Voltage , Motor_Data.RPM , Motor_Data.Current );
+    printf("\r\n\t[CAN] Controller %d [msg: %d]: Volt=%.1f V , RPM = %d , Ic= %d A", 
+    Num,Motor_Data.Msg_Counter , Motor_Data.Supply_Voltage , Motor_Data.RPM , Motor_Data.Current );
     
     // Dc Pwm
     printf(" PWM = %.2f , (%.2f %%)", Motor_Data.PWM_read, (Motor_Data.PWM_read/65535.0)*100.0);

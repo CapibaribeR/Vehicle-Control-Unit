@@ -70,32 +70,32 @@
 // unsigned long current_ms();
 float map(float Variable, float in_min, float in_max, float out_min, float out_max);
 uint16_t map_u16 (float Variable, float in_min, float in_max, uint16_t out_min, uint16_t out_max);
-void Calibrate_ADC();
+unsigned long current_ms();
 
 // Safety Checks
-bool APPS_Error_check(uint16_t Apps_1, uint16_t Apps_2, uint8_t* Error_Count);  // Acc. pedal Plausibility
+bool APPS_Error_check(uint16_t Apps_1, uint16_t Apps_2, uint8_t* Error_Count);      // Acc. pedal Plausibility
 bool BSE_Error_check(uint16_t Apps_val, uint16_t Brake_val, uint8_t* Error_BPPC);   // Brake pedal Plausibility
+bool Circuit_Error_Check(float voltage_in);                                         // tests if ADC voltage is within bounds of sensor
 
 /*================================== Angle Sensors ==================================*/
 //class for Acelleration Pedal, break Pedal, and Steering wheel
 class AnalogSensor{
     //Atributes
     protected:
-    float Angle{0};             // Angle's value in Degree
-    float Current_ADC{0};       // Last ADC voltage read [V]
-    float Volt_min;             // Sensor's Minimum voltage measurement
-    float Volt_max;             // Sensor's Maximum voltage measurement
-    float Angle_min;            // Sensor's Minimum angle
-    float Angle_max;            // Sensor's Maximum angle
+    float Angle{0};                 // Angle's value in Degree
+    float Current_ADC{0};           // Last ADC voltage read [V]
+    float Volt_min{0};              // Sensor's Minimum voltage measurement
+    float Volt_max{0};              // Sensor's Maximum voltage measurement
+    float Angle_min{0};             // Sensor's Minimum angle
+    float Angle_max{0};             // Sensor's Maximum angle
+    AnalogIn ADC_Pin;               // Input Pin in the MicroController
 
-    bool Circuit_ERROR{0};      // Flag for short or open circuit
+    public:
+    bool Error_Flag{0};          // Flag for short or open circuit
 
-    AnalogIn ADC_Pin;           // Input Pin in the MicroController
-    DigitalOut BRAKE_LIGT{BRAKE_LIGHT_PIN};
     //Methods
     public:
     float read_angle();                             // returns scaled angle
-    bool Circuit_Error_Check(float voltage_in);     // tests if ADC voltage is within bounds of sensor
     bool get_circuit_error();                       // Returns Circuit Error
     void Voltage_print();                           // prints pin's voltage
 

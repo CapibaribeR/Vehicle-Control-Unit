@@ -22,7 +22,7 @@ void OpenLoopDifferential(float Steering_rad, uint16_t Apps, uint16_t Wm_ref[]){
         del_W = DEL_W_MAX;
     }
 
-    // Calculate differential [in Rad/s] and turns into RPM (Note: there's a Implicit Type Conversion there)
+    // Calculate differential [in RPM] (Note: there's a Implicit Type Conversion there)
     W1_ref = Wv_ref + del_W;
     W2_ref = Wv_ref - del_W;
 

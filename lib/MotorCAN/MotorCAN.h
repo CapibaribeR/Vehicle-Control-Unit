@@ -37,6 +37,22 @@
 #define MAX_TEMP_CONTROLLER      80                          // Motor Controller Max temperature [°C]
 #define MAX_TEMP_MOTOR           80                          // Motor Max temperature [°C]
 
+/*===================================== COMMUNICATION PORTS (STM32 F746ZG) ==================*/
+// CAN 1: General communication in the VCU
+#define CAN1_RX                 PD_0
+#define CAN1_TX                 PD_1
+
+// CAN 2: Communication with the motor controller
+#define CAN2_RX                 PB_5
+#define CAN2_TX                 PB_6
+
+// CAN frequency in Hz (bit/s)
+#define CAN1_FREQUENCY           1e6
+#define CAN2_FREQUENCY           1e6        // for CAN 2.0, its 1MHz [1Mbit/s] [Mandatory]
+
+
+
+
 
 
 /*================================== Receive Struct ==================================*/
